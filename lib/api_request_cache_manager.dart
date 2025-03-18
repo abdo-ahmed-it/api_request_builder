@@ -48,12 +48,12 @@ class ApiRequestCacheManager {
   }
 
   static Future<T> fetchAction<T>(
-      String key,
-      ApiRequestAction<T> action, {
-        Map<String, dynamic> requestData = const {},
-        bool enableCache = true,
-        bool enableBackgroundFetch = true,
-      }) async {
+    String key,
+    ApiRequestAction<T> action, {
+    Map<String, dynamic> requestData = const {},
+    bool enableCache = true,
+    bool enableBackgroundFetch = true,
+  }) async {
     if (enableCache && _cache.containsKey(key)) {
       final cachedData = retrieveData<T>(key);
       if (cachedData != null) {
@@ -67,16 +67,16 @@ class ApiRequestCacheManager {
     Completer<T> completer = Completer<T>();
     await action
         .listen(
-      onStart: () {},
-      onDone: () {},
-      onSuccess: (response) {
-        if (enableCache) {
-          store(key, response);
-        }
-        completer.complete(response);
-      },
-      onError: (e) => completer.completeError(e),
-    )
+          onStart: () {},
+          onDone: () {},
+          onSuccess: (response) {
+            if (enableCache) {
+              store(key, response);
+            }
+            completer.complete(response);
+          },
+          onError: (e) => completer.completeError(e),
+        )
         .whereMap(requestData)
         .execute();
 
@@ -88,33 +88,33 @@ class ApiRequestCacheManager {
   }
 
   static Future<void> _fetchActionInBackground<T>(
-      String key,
-      ApiRequestAction<T> action,
-      bool enableCache,
-      Map<String, dynamic> requestData,
-      ) async {
+    String key,
+    ApiRequestAction<T> action,
+    bool enableCache,
+    Map<String, dynamic> requestData,
+  ) async {
     store(key, retrieveData<T>(key), isFetching: true);
     await action
         .listen(
-      onStart: () {},
-      onDone: () {},
-      onSuccess: (response) {
-        if (enableCache) {
-          store(key, response);
-        }
-      },
-      onError: (e) {},
-    )
+          onStart: () {},
+          onDone: () {},
+          onSuccess: (response) {
+            if (enableCache) {
+              store(key, response);
+            }
+          },
+          onError: (e) {},
+        )
         .whereMap(requestData)
         .execute();
   }
 
   static Future<T> fetchFuture<T>(
-      String key,
-      Future<T> Function() future, {
-        bool enableCache = true,
-        bool enableBackgroundFetch = true,
-      }) async {
+    String key,
+    Future<T> Function() future, {
+    bool enableCache = true,
+    bool enableBackgroundFetch = true,
+  }) async {
     if (enableCache && _cache.containsKey(key)) {
       final cachedData = retrieveData<T>(key);
       if (cachedData != null) {
@@ -140,10 +140,10 @@ class ApiRequestCacheManager {
   }
 
   static Future<void> _fetchFutureInBackground<T>(
-      String key,
-      Future<T> Function() future,
-      bool enableCache,
-      ) async {
+    String key,
+    Future<T> Function() future,
+    bool enableCache,
+  ) async {
     store(key, retrieveData<T>(key), isFetching: true);
     try {
       final newData = await future();

@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 
 import 'api_request_cache_manager.dart';
 
-
-
 // كلاس جديد لتخزين الـ configuration العامة
 class _ApiRequestConfig {
   static bool defaultEnableCache = false;
@@ -41,7 +39,7 @@ class ApiRequestBuilder<T> extends StatefulWidget {
     this.enableBackgroundFetch,
     this.requestData = const {},
   }) : assert(future != null || action != null,
-  'Must provide either future or action');
+            'Must provide either future or action');
 
   /// Configures default settings for all ApiRequestBuilder instances.
   /// Call this method early in your app (e.g., in main.dart before runApp).
@@ -205,24 +203,24 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
     return false;
   }
 
-  static void refresh<T>({
-    String? cacheKey,
-    Future<T> Function()? future,
-    ApiRequestAction<T>? action,
-    Map<String, dynamic> requestData = const {},
-  }) {
-    assert(future != null || action != null,
-    'Must provide either future or action');
-    final key = cacheKey ??
-        (future != null
-            ? 'future_${future.hashCode}'
-            : 'action_${action.runtimeType.toString()}_${action!.path}');
-    ApiRequestCacheManager.clear(key);
-    if (action != null) {
-      ApiRequestCacheManager.fetchAction<T>(key, action,
-          requestData: requestData);
-    } else {
-      ApiRequestCacheManager.fetchFuture<T>(key, future!);
-    }
-  }
+  // static void refresh<T>({
+  //   String? cacheKey,
+  //   Future<T> Function()? future,
+  //   ApiRequestAction<T>? action,
+  //   Map<String, dynamic> requestData = const {},
+  // }) {
+  //   assert(future != null || action != null,
+  //       'Must provide either future or action');
+  //   final key = cacheKey ??
+  //       (future != null
+  //           ? 'future_${future.hashCode}'
+  //           : 'action_${action.runtimeType.toString()}_${action!.path}');
+  //   ApiRequestCacheManager.clear(key);
+  //   if (action != null) {
+  //     ApiRequestCacheManager.fetchAction<T>(key, action,
+  //         requestData: requestData);
+  //   } else {
+  //     ApiRequestCacheManager.fetchFuture<T>(key, future!);
+  //   }
+  // }
 }

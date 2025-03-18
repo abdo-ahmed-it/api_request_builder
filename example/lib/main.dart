@@ -22,7 +22,8 @@ class ExampleAction extends ApiRequestAction<ExampleResponse> {
   String get path => 'example'; // Mock API endpoint for demonstration
 
   @override
-  ResponseBuilder<ExampleResponse> get responseBuilder => (json) => ExampleResponse.fromJson(json);
+  ResponseBuilder<ExampleResponse> get responseBuilder =>
+      (json) => ExampleResponse.fromJson(json);
 }
 
 void main() {
@@ -56,7 +57,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ApiRequestBuilder Example',
       theme: ThemeData(primarySwatch: Colors.blue),
-      home:  MyHomePage(),
+      home: MyHomePage(),
     );
   }
 }
@@ -65,7 +66,7 @@ class MyApp extends StatelessWidget {
 class MyHomePage extends StatelessWidget {
   final action = ExampleAction(); // Define the action as a constant
 
-   MyHomePage({super.key});
+  MyHomePage({super.key});
 
   @override
   Widget build(BuildContext context) {

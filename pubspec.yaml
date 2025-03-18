@@ -1,7 +1,7 @@
 name: api_request_builder
-description: "A new Flutter project."
+description: "A Flutter package that simplifies API requests"
 version: 0.0.1
-homepage:
+homepage: https://github.com/abdo-ahmed-it/api_request_builder
 
 environment:
   sdk: ^3.6.2
