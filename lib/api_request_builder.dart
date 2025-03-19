@@ -16,7 +16,7 @@ class _ApiRequestConfig {
 class ApiRequestBuilder<T> extends StatefulWidget {
   final Future<T> Function()? future;
   final ApiRequestAction<T>? action;
-  final Widget Function(BuildContext, Future<T>, T) builder;
+  final Widget Function(BuildContext, Future<T> Function(), T) builder;
   final Widget Function(BuildContext)? loadingBuilder;
   final Widget Function(BuildContext, Future<T>, Object)? errorBuilder;
   final Widget Function(BuildContext, Future<T>)? emptyBuilder;
@@ -130,6 +130,16 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
       );
     }
   }
+  Future<T> _refresh() {
+    print('abdo New');
+    setState(() {
+      _future = _getFuture();
+      if (widget.enableCache ?? _ApiRequestConfig.defaultEnableCache) {
+        ApiRequestCacheManager.clear(_cacheKey); // Clear cache to force new request
+      }
+    });
+    return _future;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -157,7 +167,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
             if (_isEmpty(data) && effectiveEmptyBuilder != null) {
               return effectiveEmptyBuilder(context);
             }
-            return widget.builder(context, _future, data);
+            return widget.builder(context, _refresh(), data);
           }
           return ValueListenableBuilder<T?>(
             valueListenable: ApiRequestCacheManager.getNotifier<T>(_cacheKey),
@@ -167,14 +177,14 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
                 if (_isEmpty(snapshotData) && effectiveEmptyBuilder != null) {
                   return effectiveEmptyBuilder(context);
                 }
-                return widget.builder(context, _future, snapshotData);
+                return widget.builder(context,  _refresh(), snapshotData);
               }
               if (_isEmpty(data) && effectiveEmptyBuilder != null) {
                 return effectiveEmptyBuilder(context);
               }
               return Stack(
                 children: [
-                  widget.builder(context, _future, data),
+                  widget.builder(context,  _refresh(), data),
                   if (ApiRequestCacheManager.isFetching(_cacheKey))
                     const Positioned(
                       top: 10,
