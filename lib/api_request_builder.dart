@@ -15,11 +15,14 @@ class _ApiRequestConfig {
 
 class ApiRequestBuilder<T> extends StatefulWidget {
   final Future<T> Function()? future;
+
   final ApiRequestAction<T>? action;
+
   final Widget Function(BuildContext, Future<T> Function(), T) builder;
   final Widget Function(BuildContext)? loadingBuilder;
-  final Widget Function(BuildContext, Future<T>, Object)? errorBuilder;
-  final Widget Function(BuildContext, Future<T>)? emptyBuilder;
+  final Widget Function(BuildContext, Future<T> Function(), Object)?
+      errorBuilder;
+  final Widget Function(BuildContext, Future<T> Function())? emptyBuilder;
   final bool? enableCache; // nullable عشان يستخدم الـ default لو null
   final bool? enableBackgroundFetch; // nullable عشان يستخدم الـ default لو null
   final String? cacheKey;
@@ -107,7 +110,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
     }
   }
 
-  Future<T> _getFuture() {
+  Future<T> _getFuture() async{
     final effectiveEnableCache =
         widget.enableCache ?? _ApiRequestConfig.defaultEnableCache;
     final effectiveEnableBackgroundFetch = widget.enableBackgroundFetch ??
@@ -130,15 +133,19 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
       );
     }
   }
-  Future<T> _refresh() {
-    print('abdo New');
+
+  Future<T> _refresh() async {
+    print('hello');
+    final effectiveEnableCache = widget.enableCache ?? _ApiRequestConfig.defaultEnableCache;
+    if (effectiveEnableCache) {
+      ApiRequestCacheManager.clear(_cacheKey); // Clear cache to force new request
+    }
+    final newFuture = _getFuture(); // نفذ الـ request من جديد
+    final result = await newFuture; // استنى النتيجة
     setState(() {
-      _future = _getFuture();
-      if (widget.enableCache ?? _ApiRequestConfig.defaultEnableCache) {
-        ApiRequestCacheManager.clear(_cacheKey); // Clear cache to force new request
-      }
+      _future = newFuture; // حدث الـ _future بعد ما الـ request يخلّص
     });
-    return _future;
+    return result;
   }
 
   @override
@@ -159,13 +166,13 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
           return effectiveLoadingBuilder?.call(context) ??
               const Center(child: CircularProgressIndicator());
         } else if (snapshot.hasError) {
-          return effectiveErrorBuilder?.call(context, snapshot.error!) ??
+          return effectiveErrorBuilder?.call(context, _refresh,snapshot.error!) ??
               Center(child: Text('Error: ${snapshot.error}'));
         } else if (snapshot.hasData) {
           if (!effectiveEnableCache) {
             final T data = snapshot.data!;
             if (_isEmpty(data) && effectiveEmptyBuilder != null) {
-              return effectiveEmptyBuilder(context);
+              return effectiveEmptyBuilder(context,_refresh);
             }
             return widget.builder(context, _refresh, data);
           }
@@ -177,14 +184,14 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
                 if (_isEmpty(snapshotData) && effectiveEmptyBuilder != null) {
                   return effectiveEmptyBuilder(context);
                 }
-                return widget.builder(context,  _refresh, snapshotData);
+                return widget.builder(context, _refresh, snapshotData);
               }
               if (_isEmpty(data) && effectiveEmptyBuilder != null) {
                 return effectiveEmptyBuilder(context);
               }
               return Stack(
                 children: [
-                  widget.builder(context,  _refresh, data),
+                  widget.builder(context, _refresh, data),
                   if (ApiRequestCacheManager.isFetching(_cacheKey))
                     const Positioned(
                       top: 10,
