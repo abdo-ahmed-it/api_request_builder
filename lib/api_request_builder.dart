@@ -167,7 +167,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
             if (_isEmpty(data) && effectiveEmptyBuilder != null) {
               return effectiveEmptyBuilder(context);
             }
-            return widget.builder(context, _refresh(), data);
+            return widget.builder(context, _refresh, data);
           }
           return ValueListenableBuilder<T?>(
             valueListenable: ApiRequestCacheManager.getNotifier<T>(_cacheKey),
@@ -177,14 +177,14 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
                 if (_isEmpty(snapshotData) && effectiveEmptyBuilder != null) {
                   return effectiveEmptyBuilder(context);
                 }
-                return widget.builder(context,  _refresh(), snapshotData);
+                return widget.builder(context,  _refresh, snapshotData);
               }
               if (_isEmpty(data) && effectiveEmptyBuilder != null) {
                 return effectiveEmptyBuilder(context);
               }
               return Stack(
                 children: [
-                  widget.builder(context,  _refresh(), data),
+                  widget.builder(context,  _refresh, data),
                   if (ApiRequestCacheManager.isFetching(_cacheKey))
                     const Positioned(
                       top: 10,

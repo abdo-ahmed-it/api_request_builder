@@ -92,9 +92,9 @@ class MyHomePage extends StatelessWidget {
 
   // Static method to build the content based on fetched data
   static Widget _buildContent(BuildContext context,
-      Future<ExampleResponse> future, ExampleResponse data) {
+  Future<ExampleResponse> Function() future, ExampleResponse data) {
     return RefreshIndicator(
-      onRefresh: () => future,
+      onRefresh:()=> future(),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
