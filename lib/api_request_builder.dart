@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 
 import 'api_request_cache_manager.dart';
 
-// كلاس جديد لتخزين الـ configuration العامة
 class _ApiRequestConfig {
   static bool defaultEnableCache = false;
   static bool defaultEnableBackgroundFetch = false;
@@ -17,10 +16,10 @@ class _ApiRequestConfig {
 class ApiRequestBuilder<T> extends StatefulWidget {
   final Future<T> Function()? future;
   final ApiRequestAction<T>? action;
-  final Widget Function(BuildContext, T) builder;
+  final Widget Function(BuildContext, Future<T>, T) builder;
   final Widget Function(BuildContext)? loadingBuilder;
-  final Widget Function(BuildContext, Object)? errorBuilder;
-  final Widget Function(BuildContext)? emptyBuilder;
+  final Widget Function(BuildContext, Future<T>, Object)? errorBuilder;
+  final Widget Function(BuildContext, Future<T>)? emptyBuilder;
   final bool? enableCache; // nullable عشان يستخدم الـ default لو null
   final bool? enableBackgroundFetch; // nullable عشان يستخدم الـ default لو null
   final String? cacheKey;
@@ -158,7 +157,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
             if (_isEmpty(data) && effectiveEmptyBuilder != null) {
               return effectiveEmptyBuilder(context);
             }
-            return widget.builder(context, data);
+            return widget.builder(context, _future, data);
           }
           return ValueListenableBuilder<T?>(
             valueListenable: ApiRequestCacheManager.getNotifier<T>(_cacheKey),
@@ -168,14 +167,14 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
                 if (_isEmpty(snapshotData) && effectiveEmptyBuilder != null) {
                   return effectiveEmptyBuilder(context);
                 }
-                return widget.builder(context, snapshotData);
+                return widget.builder(context, _future, snapshotData);
               }
               if (_isEmpty(data) && effectiveEmptyBuilder != null) {
                 return effectiveEmptyBuilder(context);
               }
               return Stack(
                 children: [
-                  widget.builder(context, data),
+                  widget.builder(context, _future, data),
                   if (ApiRequestCacheManager.isFetching(_cacheKey))
                     const Positioned(
                       top: 10,
@@ -203,24 +202,24 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
     return false;
   }
 
-  // static void refresh<T>({
-  //   String? cacheKey,
-  //   Future<T> Function()? future,
-  //   ApiRequestAction<T>? action,
-  //   Map<String, dynamic> requestData = const {},
-  // }) {
-  //   assert(future != null || action != null,
-  //       'Must provide either future or action');
-  //   final key = cacheKey ??
-  //       (future != null
-  //           ? 'future_${future.hashCode}'
-  //           : 'action_${action.runtimeType.toString()}_${action!.path}');
-  //   ApiRequestCacheManager.clear(key);
-  //   if (action != null) {
-  //     ApiRequestCacheManager.fetchAction<T>(key, action,
-  //         requestData: requestData);
-  //   } else {
-  //     ApiRequestCacheManager.fetchFuture<T>(key, future!);
-  //   }
-  // }
+// static void refresh<T>({
+//   String? cacheKey,
+//   Future<T> Function()? future,
+//   ApiRequestAction<T>? action,
+//   Map<String, dynamic> requestData = const {},
+// }) {
+//   assert(future != null || action != null,
+//       'Must provide either future or action');
+//   final key = cacheKey ??
+//       (future != null
+//           ? 'future_${future.hashCode}'
+//           : 'action_${action.runtimeType.toString()}_${action!.path}');
+//   ApiRequestCacheManager.clear(key);
+//   if (action != null) {
+//     ApiRequestCacheManager.fetchAction<T>(key, action,
+//         requestData: requestData);
+//   } else {
+//     ApiRequestCacheManager.fetchFuture<T>(key, future!);
+//   }
+// }
 }

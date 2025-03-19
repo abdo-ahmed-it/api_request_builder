@@ -29,8 +29,10 @@ class ExampleAction extends ApiRequestAction<ExampleResponse> {
 void main() {
   // Configure default settings for all ApiRequestBuilder instances
   ApiRequestBuilder.config(
-    enableCache: true, // Enable caching by default
-    enableBackgroundFetch: false, // Disable background fetching by default
+    enableCache: true,
+    // Enable caching by default
+    enableBackgroundFetch: false,
+    // Disable background fetching by default
     loadingBuilder: (context) => const Center(
       child: CircularProgressIndicator(color: Colors.blue),
     ),
@@ -89,17 +91,21 @@ class MyHomePage extends StatelessWidget {
   }
 
   // Static method to build the content based on fetched data
-  static Widget _buildContent(BuildContext context, ExampleResponse data) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Center(
-          child: Text(
-            data.message,
-            style: const TextStyle(fontSize: 18),
+  static Widget _buildContent(BuildContext context,
+      Future<ExampleResponse> future, ExampleResponse data) {
+    return RefreshIndicator(
+      onRefresh: () => future,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Center(
+            child: Text(
+              data.message,
+              style: const TextStyle(fontSize: 18),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
