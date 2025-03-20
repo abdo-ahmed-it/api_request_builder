@@ -188,16 +188,20 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
           _cacheKey); // Clear cache to force a new request
     }
 
-    // Determine the effective request data based on mergeData flag, defaulting to true
-    final Map<String, dynamic> effectiveRequestData = (mergeData ?? true) &&
-            data != null
-        ? {
-            ...widget.requestData,
-            ...data
-          } // Merge if mergeData is true (default) and data is provided
-        : data ??
+    // // Determine the effective request data based on mergeData flag, defaulting to true
+    // final Map<String, dynamic> effectiveRequestData =
+    //     (mergeData ?? true) && data != null
+    //         ? {
+    //             ...widget.requestData,
+    //             ...data
+    //           } // Merge if mergeData is true (default) and data is provided
+    //         : data ?? widget.requestData;
+    final Map<String, dynamic> effectiveRequestData = mergeData == null ||
+            mergeData
+        ? (data != null ? {...widget.requestData, ...data} : widget.requestData)
+        : (data ??
             widget
-                .requestData; // Use new data or fallback to original if no new data
+                .requestData); // Use new data or fallback to original if no new data
 
     final Future<T> newFuture =
         _getFuture(effectiveRequestData); // Fetch with effective data
