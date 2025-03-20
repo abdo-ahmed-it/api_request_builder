@@ -19,7 +19,7 @@ typedef RefreshFuture<T> = Future<T> Function({
   void Function()? onStart,
   void Function()? onDone,
   Map<String, dynamic>? data,
-  bool? mergeData, // New parameter to control data merging
+  bool? mergeData,
 });
 
 /// A widget that simplifies API requests with caching, background fetching, and UI rendering.
@@ -42,6 +42,9 @@ class ApiRequestBuilder<T> extends StatefulWidget {
   /// Optional builder for the empty state, with access to the refresh function.
   final Widget Function(BuildContext, RefreshFuture<T>)? emptyBuilder;
 
+  /// Optional checker to determine if the data is considered empty.
+  final bool Function(T)? isEmptyChecker;
+
   /// Whether to enable caching; falls back to default if null.
   final bool? enableCache;
 
@@ -63,6 +66,7 @@ class ApiRequestBuilder<T> extends StatefulWidget {
     this.loadingBuilder,
     this.errorBuilder,
     this.emptyBuilder,
+    this.isEmptyChecker, // New optional parameter
     this.enableCache,
     this.enableBackgroundFetch,
     this.requestData = const {},
@@ -173,7 +177,8 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
     void Function()? onStart,
     void Function()? onDone,
     Map<String, dynamic>? data,
-    bool? mergeData, // Controls whether to merge with widget.requestData
+    bool?
+        mergeData, // Controls whether to merge with widget.requestData, defaults to true
   }) async {
     onStart?.call(); // Execute onStart callback if provided
     final bool effectiveEnableCache =
@@ -183,11 +188,16 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
           _cacheKey); // Clear cache to force a new request
     }
 
-    // Determine the effective request data based on mergeData flag
-    final Map<String, dynamic> effectiveRequestData =
-        (mergeData ?? true) && data != null
-            ? {...widget.requestData, ...data}
-            : data ?? widget.requestData;
+    // Determine the effective request data based on mergeData flag, defaulting to true
+    final Map<String, dynamic> effectiveRequestData = (mergeData ?? true) &&
+            data != null
+        ? {
+            ...widget.requestData,
+            ...data
+          } // Merge if mergeData is true (default) and data is provided
+        : data ??
+            widget
+                .requestData; // Use new data or fallback to original if no new data
 
     final Future<T> newFuture =
         _getFuture(effectiveRequestData); // Fetch with effective data
@@ -237,7 +247,9 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
           final T data =
               snapshot.data as T; // Cast data to T, safe due to hasData check
           if (!effectiveEnableCache) {
-            if (_isEmpty(data) && effectiveEmptyBuilder != null) {
+            // Use custom isEmptyChecker if provided, otherwise fallback to _isEmpty
+            if ((widget.isEmptyChecker?.call(data) ?? _isEmpty(data)) &&
+                effectiveEmptyBuilder != null) {
               return effectiveEmptyBuilder(context, _refresh);
             }
             return widget.builder(context, _refresh, data);
@@ -247,7 +259,10 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
             builder: (context, cachedData, child) {
               final T effectiveData =
                   cachedData ?? data; // Use cached data if available
-              if (_isEmpty(effectiveData) && effectiveEmptyBuilder != null) {
+              // Use custom isEmptyChecker if provided, otherwise fallback to _isEmpty
+              if ((widget.isEmptyChecker?.call(effectiveData) ??
+                      _isEmpty(effectiveData)) &&
+                  effectiveEmptyBuilder != null) {
                 return effectiveEmptyBuilder(context, _refresh);
               }
               return Stack(
@@ -273,7 +288,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
     );
   }
 
-  /// Checks if the data is considered empty (null, empty list, or empty string).
+  /// Default check if the data is considered empty (null, empty list, or empty string).
   bool _isEmpty(T data) {
     if (data == null) return true;
     if (data is List && (data as List).isEmpty) return true;
