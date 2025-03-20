@@ -14,6 +14,13 @@ class _ApiRequestConfig {
   static Widget Function(BuildContext)? defaultEmptyBuilder;
 }
 
+// Typedef for the refresh function signature
+typedef RefreshFuture<T> = Future<T> Function({
+  void Function()? onStart,
+  void Function()? onDone,
+  Map<String, dynamic>? data,
+});
+
 /// A widget that simplifies API requests with caching, background fetching, and UI rendering.
 class ApiRequestBuilder<T> extends StatefulWidget {
   /// Optional Future to fetch data directly.
@@ -23,17 +30,16 @@ class ApiRequestBuilder<T> extends StatefulWidget {
   final ApiRequestAction<T>? action;
 
   /// Builder to render the UI with data and a refresh function.
-  final Widget Function(BuildContext, Future<T> Function(), T) builder;
+  final Widget Function(BuildContext, RefreshFuture<T>, T) builder;
 
   /// Optional builder for the loading state.
   final Widget Function(BuildContext)? loadingBuilder;
 
   /// Optional builder for the error state, with access to the refresh function.
-  final Widget Function(BuildContext, Future<T> Function(), Object)?
-      errorBuilder;
+  final Widget Function(BuildContext, RefreshFuture<T>, Object)? errorBuilder;
 
   /// Optional builder for the empty state, with access to the refresh function.
-  final Widget Function(BuildContext, Future<T> Function())? emptyBuilder;
+  final Widget Function(BuildContext, RefreshFuture<T>)? emptyBuilder;
 
   /// Whether to enable caching; falls back to default if null.
   final bool? enableCache;
@@ -44,7 +50,7 @@ class ApiRequestBuilder<T> extends StatefulWidget {
   /// Custom cache key; auto-generated if null.
   final String? cacheKey;
 
-  /// Additional data to include in the request.
+  /// Initial request data to include in the request.
   final Map<String, dynamic> requestData;
 
   const ApiRequestBuilder({
@@ -98,7 +104,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
   void initState() {
     super.initState();
     _cacheKey = _getEffectiveCacheKey();
-    _future = _getFuture();
+    _future = _getFuture(widget.requestData);
   }
 
   @override
@@ -107,7 +113,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
     final bool shouldUpdate = _shouldUpdate(oldWidget);
     if (shouldUpdate) {
       _cacheKey = _getEffectiveCacheKey();
-      _future = _getFuture();
+      _future = _getFuture(widget.requestData);
     }
   }
 
@@ -135,8 +141,8 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
     return '${widget.action!.method}_${widget.action!.path}';
   }
 
-  /// Fetches data either from a Future or an ApiRequestAction.
-  Future<T> _getFuture() {
+  /// Fetches data with the provided request data.
+  Future<T> _getFuture(Map<String, dynamic> requestData) {
     final bool effectiveEnableCache =
         widget.enableCache ?? _ApiRequestConfig.defaultEnableCache;
     final bool effectiveEnableBackgroundFetch = widget.enableBackgroundFetch ??
@@ -147,7 +153,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
         _cacheKey,
         widget.action!,
         enableCache: effectiveEnableCache,
-        requestData: widget.requestData,
+        requestData: requestData,
         enableBackgroundFetch: effectiveEnableBackgroundFetch,
       );
     }
@@ -160,15 +166,23 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
     );
   }
 
-  /// Refreshes the data by fetching a new Future, updating the UI only after completion.
-  Future<T> _refresh() async {
+  /// Refreshes the data with optional callbacks and request data, updating the UI only after completion.
+  Future<T> _refresh({
+    void Function()? onStart,
+    void Function()? onDone,
+    Map<String, dynamic>? data,
+  }) async {
+    onStart?.call(); // Execute onStart callback if provided
     final bool effectiveEnableCache =
         widget.enableCache ?? _ApiRequestConfig.defaultEnableCache;
     if (effectiveEnableCache) {
       ApiRequestCacheManager.clear(
           _cacheKey); // Clear cache to force a new request
     }
-    final Future<T> newFuture = _getFuture(); // Fetch new data
+    final Map<String, dynamic> effectiveRequestData =
+        data ?? widget.requestData;
+    final Future<T> newFuture =
+        _getFuture(effectiveRequestData); // Fetch with new or original data
     final T result = await newFuture; // Wait for the request to complete
     if (mounted) {
       setState(() {
@@ -176,6 +190,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
             newFuture; // Update the Future only after the request succeeds
       });
     }
+    onDone?.call(); // Execute onDone callback if provided
     return result;
   }
 
@@ -185,13 +200,13 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
         widget.enableCache ?? _ApiRequestConfig.defaultEnableCache;
     final Widget Function(BuildContext)? effectiveLoadingBuilder =
         widget.loadingBuilder ?? _ApiRequestConfig.defaultLoadingBuilder;
-    final Widget Function(BuildContext, Future<T> Function(), Object)?
+    final Widget Function(BuildContext, RefreshFuture<T>, Object)?
         effectiveErrorBuilder =
         widget.errorBuilder ?? (_ApiRequestConfig.defaultErrorBuilder != null
             ? (context, refresh, error) =>
                 _ApiRequestConfig.defaultErrorBuilder!(context, error)
             : null);
-    final Widget Function(BuildContext, Future<T> Function())?
+    final Widget Function(BuildContext, RefreshFuture<T>)?
         effectiveEmptyBuilder =
         widget.emptyBuilder ?? (_ApiRequestConfig.defaultEmptyBuilder != null
             ? (context, refresh) =>
