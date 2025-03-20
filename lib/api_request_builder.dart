@@ -155,6 +155,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
         _ApiRequestConfig.defaultEnableBackgroundFetch;
 
     if (widget.action != null) {
+      print('_getFuture data: $requestData');
       return ApiRequestCacheManager.fetchAction<T>(
         _cacheKey,
         widget.action!,
@@ -196,7 +197,7 @@ class _ApiRequestBuilderState<T> extends State<ApiRequestBuilder<T>> {
                 ...data
               } // Merge if mergeData is true (default) and data is provided
             : data ?? widget.requestData;
-
+    print('mergeData: $mergeData');
     print('widget.requestData: ${widget.requestData}');
     print('data: $data');
     print('effectiveRequestData: $effectiveRequestData');

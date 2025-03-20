@@ -54,6 +54,7 @@ class ApiRequestCacheManager {
     bool enableCache = true,
     bool enableBackgroundFetch = true,
   }) async {
+    print('requestData in manager: $requestData');
     if (enableCache && _cache.containsKey(key)) {
       final cachedData = retrieveData<T>(key);
       if (cachedData != null) {
